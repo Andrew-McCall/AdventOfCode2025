@@ -18,15 +18,9 @@ pub fn solution(input_path: &str) -> Result<Answer, String> {
         )
     })?;
 
-    let mut debug = 0;
-
     for line in input.lines() {
         debug += 1;
         let (start, value) = parse_line(line)?;
-
-        // if debug > 10 {
-        //     break;
-        // }
 
         match start {
             'R' => {
@@ -37,8 +31,6 @@ pub fn solution(input_path: &str) -> Result<Answer, String> {
             }
             _ => return Err(format!("Invalid Line (start): {line}")),
         }
-
-        print!(" {line} {}", answer.final_number);
 
         if answer.final_number == 0 {
             answer.zero_count += 1;
