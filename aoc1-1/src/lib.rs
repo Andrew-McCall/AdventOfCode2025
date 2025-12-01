@@ -19,7 +19,6 @@ pub fn solution(input_path: &str) -> Result<Answer, String> {
     })?;
 
     for line in input.lines() {
-        debug += 1;
         let (start, value) = parse_line(line)?;
 
         match start {
