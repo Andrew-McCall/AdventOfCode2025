@@ -1,0 +1,12 @@
+[package]
+name = "aoc"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+aoc1-1 = { path = "../aoc1-1", optional = true }
+
+[features]
+default = ["day1"]
+
+day1 = ["aoc1-1"]
