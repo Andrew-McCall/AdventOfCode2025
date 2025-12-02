@@ -1,45 +1,49 @@
 use std::fmt;
 
-pub fn solution(input_path: &str) -> Result<Answer, String> {
+pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
+    let file =
+        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
+
+    Some(
+        String::from_utf8(file)
+            .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
+            .to_string()
+            .lines()
+            .map(|s| s.to_string())
+            .collect(),
+    )
+}
+
+pub fn solution(inputs: Vec<String>) -> Result<Answer, String> {
     let mut answer = Answer {
         final_number: 50,
         zero_count: 0,
         zero_passes: 0,
     };
 
-    let file =
-        std::fs::read(input_path).map_err(|e| format!("Unable to read file: {:?}", e.kind()))?;
-
-    let input = String::from_utf8(file).map_err(|e| {
-        format!(
-            "Unable to parse file: Character {}",
-            e.utf8_error().valid_up_to()
-        )
-    })?;
-
     // let mut debug = 0;
-    for line in input.lines() {
+    for line in inputs {
         // debug += 1;
         // if debug > 20 {
         //     break;
         // }
-        let (start, value) = parse_line(line)?;
+        let (start, value) = parse_line(&line)?;
 
-        let prev = answer.final_number;
         match start {
             'R' => answer.final_number += value,
             'L' => answer.final_number -= value,
             _ => return Err(format!("Invalid Line (start): {line}")),
         }
 
-        let prev_q = prev.div_euclid(100);
-        let new_q = answer.final_number.div_euclid(100);
-        answer.zero_passes += (new_q - prev_q).abs();
+        let passes = answer.final_number.div_euclid(100).abs();
+        answer.zero_passes += passes;
         answer.final_number = answer.final_number.rem_euclid(100);
 
         if answer.final_number == 0 {
             answer.zero_count += 1;
-            answer.zero_passes += 1;
+            if passes == 0 {
+                answer.zero_passes += 1;
+            }
         }
 
         println!("{} {}", answer.final_number, answer.zero_passes);
