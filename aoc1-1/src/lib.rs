@@ -21,12 +21,7 @@ pub fn solution(inputs: Vec<String>) -> Result<Answer, String> {
         zero_passes: 0,
     };
 
-    // let mut debug = 0;
     for line in inputs {
-        // debug += 1;
-        // if debug > 20 {
-        //     break;
-        // }
         let (start, value) = parse_line(&line)?;
 
         match start {
