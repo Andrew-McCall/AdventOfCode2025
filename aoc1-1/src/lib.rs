@@ -39,6 +39,7 @@ pub fn solution(input_path: &str) -> Result<Answer, String> {
 
         if answer.final_number == 0 {
             answer.zero_count += 1;
+            answer.zero_passes += 1;
         }
 
         println!("{} {}", answer.final_number, answer.zero_passes);
