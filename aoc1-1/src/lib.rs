@@ -24,16 +24,16 @@ pub fn solution(inputs: Vec<String>) -> Result<Answer, String> {
 
         match start {
             'R' => {
-                counter += value;
-                if counter > 99 {
+                if counter > 0 && counter + value > 99 {
                     zero_pass += 1
                 };
+                counter += value;
             }
             'L' => {
-                counter -= value;
-                if counter < 0 {
+                if counter > 0 && value > counter {
                     zero_pass += 1
                 }
+                counter -= value;
             }
             _ => return Err(format!("Invalid Line: {line}")),
         }
