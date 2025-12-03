@@ -15,31 +15,35 @@ pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
 }
 
 pub fn solution(inputs: Vec<String>) -> Result<Answer, String> {
-    let mut counter = 50;
+    let mut counter = 50_isize;
     let mut zero_land = 0;
     let mut zero_pass = 0;
 
-    let mut last_non_zero = 0_isize;
-
-    for line in inputs {
-        let (start, value): (char, isize) = parse_line(&line)?;
+    for line in &inputs {
+        let (start, value): (char, isize) = parse_line(line)?;
 
         match start {
-            'R' => counter += value,
-            'L' => counter -= value,
+            'R' => {
+                counter += value;
+                if counter > 99 {
+                    zero_pass += 1
+                };
+            }
+            'L' => {
+                counter -= value;
+                if counter < 0 {
+                    zero_pass += 1
+                }
+            }
             _ => return Err(format!("Invalid Line: {line}")),
         }
 
-        zero_pass += counter.div_euclid(100).abs();
+        zero_pass += value.abs() / 100;
+
         counter = counter.rem_euclid(100);
 
         if counter == 0 {
             zero_land += 1;
-        } else {
-            if last_non_zero.is_positive() != counter.is_positive() {
-                zero_pass += 1;
-            }
-            last_non_zero = counter;
         }
     }
 
@@ -107,6 +111,18 @@ mod tests {
         counter = counter.div_euclid(100);
         assert_eq!(counter, -1);
     }
+
+    #[test]
+    fn test_simple() {
+        let sample: [&str; 3] = ["L50", "R50", "L50"];
+
+        let sample = sample.iter().map(|s| s.to_string()).collect();
+
+        let result = solution(sample).unwrap();
+        assert_eq!(result.zero_land, 2);
+        assert_eq!(result.zero_pass, 0);
+    }
+
     #[test]
     fn test_large() {
         let sample = [
@@ -117,8 +133,8 @@ mod tests {
 
         let result = solution(sample).unwrap();
         // assert_eq!(result.final_number, 32);
-        assert_eq!(result.zero_pass, 16);
         assert_eq!(result.zero_land, 3);
+        assert_eq!(result.zero_pass, 16);
     }
 
     #[test]
@@ -131,8 +147,8 @@ mod tests {
 
         let result = solution(sample).unwrap();
         assert_eq!(result.final_number, 32);
-        assert_eq!(result.zero_pass, 3);
-        assert_eq!(result.zero_land, 6);
+        assert_eq!(result.zero_land, 3);
+        assert_eq!(result.zero_pass, 6);
     }
 
     #[test]
