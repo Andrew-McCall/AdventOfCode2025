@@ -7,7 +7,7 @@ fn main() {
     {
         println!("Day 1");
 
-        execute(|| aoc1_1::solution(aoc1_1::parse_input("aoc1-1/src/input").unwrap()).unwrap());
+        execute(|| aoc1::solution(aoc1::parse_input("aoc1/src/input").unwrap()).unwrap());
     }
 
     if unsafe { RAN } {
