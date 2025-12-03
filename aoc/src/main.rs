@@ -5,9 +5,14 @@ static mut RAN: bool = true;
 fn main() {
     #[cfg(feature = "day1")]
     {
-        println!("Day 1");
-
+        println!("Day One");
         execute(|| aoc1::solution(aoc1::parse_input("aoc1/src/input").unwrap()).unwrap());
+    }
+
+    #[cfg(feature = "day2")]
+    {
+        println!("Day Two");
+        execute(|| aoc2::solution(aoc2::parse_input("aoc2/src/input").unwrap()).unwrap());
     }
 
     if unsafe { RAN } {

@@ -7,9 +7,8 @@ pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
     Some(
         String::from_utf8(file)
             .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
-            .to_string()
             .lines()
-            .map(|s| s.to_string())
+            .map(str::to_string)
             .collect(),
     )
 }

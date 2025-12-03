@@ -5,8 +5,10 @@ edition = "2024"
 
 [dependencies]
 aoc1 = { path = "../aoc1", optional = true }
+aoc2 = { path = "../aoc2", optional = true }
 
 [features]
-default = ["day1"]
+default = ["day1", "day2"]
 
 day1 = ["aoc1"]
+day2 = ["aoc2"]
