@@ -15,36 +15,39 @@ pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
 }
 
 pub fn solution(inputs: Vec<String>) -> Result<Answer, String> {
-    let mut answer = Answer {
-        final_number: 50,
-        zero_count: 0,
-        zero_passes: 0,
-    };
+    let mut counter = 50;
+    let mut zero_land = 0;
+    let mut zero_pass = 0;
+
+    let mut last_non_zero = 0_isize;
 
     for line in inputs {
-        let (start, value) = parse_line(&line)?;
+        let (start, value): (char, isize) = parse_line(&line)?;
 
         match start {
-            'R' => answer.final_number += value,
-            'L' => answer.final_number -= value,
-            _ => return Err(format!("Invalid Line (start): {line}")),
+            'R' => counter += value,
+            'L' => counter -= value,
+            _ => return Err(format!("Invalid Line: {line}")),
         }
 
-        let passes = answer.final_number.div_euclid(100).abs();
-        answer.zero_passes += passes;
-        answer.final_number = answer.final_number.rem_euclid(100);
+        zero_pass += counter.div_euclid(100).abs();
+        counter = counter.rem_euclid(100);
 
-        if answer.final_number == 0 {
-            answer.zero_count += 1;
-            if passes == 0 {
-                answer.zero_passes += 1;
+        if counter == 0 {
+            zero_land += 1;
+        } else {
+            if last_non_zero.is_positive() != counter.is_positive() {
+                zero_pass += 1;
             }
+            last_non_zero = counter;
         }
-
-        println!("{} {}", answer.final_number, answer.zero_passes);
     }
 
-    Ok(answer)
+    Ok(Answer {
+        final_number: counter,
+        zero_land,
+        zero_pass,
+    })
 }
 
 fn parse_line(line: &str) -> Result<(char, isize), String> {
@@ -65,16 +68,16 @@ fn parse_line(line: &str) -> Result<(char, isize), String> {
 
 pub struct Answer {
     final_number: isize,
-    zero_count: isize,
-    zero_passes: isize,
+    zero_land: isize,
+    zero_pass: isize,
 }
 
 impl fmt::Display for Answer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} {} ({})",
-            self.zero_count, self.zero_passes, self.final_number
+            "Part 1:{}, Part 2:{}, Final Counter: {}",
+            self.zero_land, self.zero_pass, self.final_number
         )
     }
 }
@@ -104,6 +107,33 @@ mod tests {
         counter = counter.div_euclid(100);
         assert_eq!(counter, -1);
     }
+    #[test]
+    fn test_large() {
+        let sample = [
+            "L50", "L400", "R400", "R99", "R14", "L82", "L82", "L82", "L82", "L82", "L113",
+        ];
+
+        let sample = sample.iter().map(|s| s.to_string()).collect();
+
+        let result = solution(sample).unwrap();
+        // assert_eq!(result.final_number, 32);
+        assert_eq!(result.zero_pass, 16);
+        assert_eq!(result.zero_land, 3);
+    }
+
+    #[test]
+    fn test_sample() {
+        let sample = [
+            "L68", "L30", "R48", "L5", "R60", "L55", "L1", "L99", "R14", "L82",
+        ];
+
+        let sample = sample.iter().map(|s| s.to_string()).collect();
+
+        let result = solution(sample).unwrap();
+        assert_eq!(result.final_number, 32);
+        assert_eq!(result.zero_pass, 3);
+        assert_eq!(result.zero_land, 6);
+    }
 
     #[test]
     fn test_rem_euclid() {
@@ -127,5 +157,7 @@ mod tests {
         counter = -51;
         counter = counter.rem_euclid(100);
         assert_eq!(counter, 49);
+
+        assert_eq!(-400_i32.rem_euclid(100), 400_i32.rem_euclid(100));
     }
 }
