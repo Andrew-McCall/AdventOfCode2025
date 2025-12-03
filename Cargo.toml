@@ -1,7 +1,6 @@
 [workspace]
 members = ["aoc*", "aoc"]
 
-
 resolver = "3"
 [profile.release]
 opt-level = 3
