@@ -14,55 +14,42 @@ pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
     )
 }
 
-pub fn greedy(line: &str, reverse: bool) -> usize {
-    let chars = line.chars().enumerate();
-    let mut left = chars.clone();
-    let mut largest = left.next().unwrap();
-
-    for (i, c) in left {
-        if i == line.len() - 1 {
-            break;
-        }
-        if c > largest.1 {
-            largest = (i, c);
-        }
+pub fn joltage(input: &str, size: usize) -> usize {
+    let mut output = String::new();
+    let mut start = 0;
+    while output.len() < size {
+        let next = largest(
+            input
+                .get(start..input.len() - size + output.len() + 1)
+                .unwrap(),
+        );
+        output.push(next.1);
+        start += next.0 + 1;
     }
+    output.parse().unwrap()
+}
 
-    let mut chars = chars
-        .skip(largest.0 + 1)
-        .collect::<Vec<_>>()
-        .into_iter()
-        .rev();
-
-    let mut largest_right = chars.next().unwrap();
-    for (i, c) in chars {
-        if c > largest_right.1 {
-            largest_right = (i, c);
+pub fn largest(input: &str) -> (usize, char) {
+    let mut chars = input.chars().enumerate();
+    let mut largest = chars.next().unwrap();
+    for c in chars {
+        if c.1 > largest.1 {
+            largest = c;
         }
     }
-
-    if reverse {
-        return (largest_right.1.to_string() + &largest.1.to_string())
-            .parse::<usize>()
-            .unwrap();
-    }
-
-    (largest.1.to_string() + &largest_right.1.to_string())
-        .parse::<usize>()
-        .unwrap()
+    largest
 }
 
 pub fn solution(input: Vec<String>) -> Result<Answer, String> {
     let mut part_1 = 0;
+    let mut part_2 = 0;
 
     for line in &input {
-        let left = greedy(line, false);
-        let right = greedy(line.chars().rev().collect::<String>().as_str(), true);
-
-        part_1 += left.max(right);
+        part_1 += joltage(line, 2);
+        part_2 += joltage(line, 12);
     }
 
-    Ok(Answer { part_1, part_2: 0 })
+    Ok(Answer { part_1, part_2 })
 }
 
 pub struct Answer {
@@ -81,13 +68,13 @@ mod tests {
     use super::*;
     #[test]
     fn test_sample_line() {
-        let sample = ["8976543211111"];
+        let sample = ["897654321111111119"];
 
         let sample = sample.iter().map(|s| s.to_string()).collect();
 
         let result = solution(sample).unwrap();
-        assert_eq!(result.part_1, 89);
-        assert_eq!(result.part_2, 0);
+        assert_eq!(result.part_1, 99);
+        assert_eq!(result.part_2, 976543211119);
     }
 
     #[test]
@@ -103,6 +90,6 @@ mod tests {
 
         let result = solution(sample).unwrap();
         assert_eq!(result.part_1, 357);
-        assert_eq!(result.part_2, 0);
+        assert_eq!(result.part_2, 3121910778619);
     }
 }
