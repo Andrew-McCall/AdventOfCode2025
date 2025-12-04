@@ -14,14 +14,8 @@ pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
     )
 }
 
-pub enum Slot {
-    Empty,
-    Paper,
-}
-
-pub fn solution(input: Vec<String>) -> Result<Answer, String> {
-    let mut part_1 = 0;
-
+pub fn pass(input: &[String]) -> Vec<(usize, usize)> {
+    let mut output = Vec::new();
     let w = input.first().unwrap().len() as i32;
     let h = input.len() as i32;
 
@@ -61,23 +55,60 @@ pub fn solution(input: Vec<String>) -> Result<Answer, String> {
                 }
 
                 if adjacent < 4 {
-                    println!("{} {} {space} {}", x, y, adjacent);
-                    part_1 += 1;
+                    output.push((mx, my));
                 }
             }
         }
     }
+    output
+}
 
-    Ok(Answer { part_1 })
+pub fn solution(mut input: Vec<String>) -> Result<Answer, String> {
+    let mut part_1 = 0;
+    let mut part_2 = 0;
+    let mut passes = 0;
+
+    loop {
+        passes += 1;
+
+        let removed = pass(&input);
+        if passes == 1 {
+            part_1 += removed.len();
+        }
+
+        if removed.is_empty() {
+            break;
+        }
+
+        part_2 += removed.len();
+
+        for (x, y) in removed {
+            if let Some(row) = input.get_mut(y) {
+                row.replace_range(x..x + 1, "x");
+            }
+        }
+    }
+
+    Ok(Answer {
+        part_1,
+        part_2,
+        passes,
+    })
 }
 
 pub struct Answer {
     part_1: usize,
+    part_2: usize,
+    passes: usize,
 }
 
 impl fmt::Display for Answer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Part 1: {}", self.part_1)
+        write!(
+            f,
+            "Part 1: {} Part 2: {} ({})",
+            self.part_1, self.part_2, self.passes
+        )
     }
 }
 
@@ -105,6 +136,8 @@ mod tests {
 
         let result = solution(sample).unwrap();
         assert_eq!(result.part_1, 13);
+        assert_eq!(result.part_2, 43);
+        assert_eq!(result.passes, 10);
     }
 
     #[test]
