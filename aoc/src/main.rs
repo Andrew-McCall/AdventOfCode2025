@@ -18,7 +18,13 @@ fn main() {
     #[cfg(feature = "day3")]
     {
         println!("Day Three");
-        execute(|| aoc3::solution(aoc3::parse_input("aoc3/src/input").unwrap()).unwrap());
+        execute(|| aoc3::solution(aoc3::parse_input("aoc3/src/input.txt").unwrap()).unwrap());
+    }
+
+    #[cfg(feature = "day4")]
+    {
+        println!("Day Four");
+        execute(|| aoc4::solution(aoc4::parse_input("aoc4/src/input.txt").unwrap()).unwrap());
     }
 
     if unsafe { RAN } {
