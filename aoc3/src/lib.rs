@@ -14,7 +14,7 @@ pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
     )
 }
 
-pub fn greedy(line: &str) -> usize {
+pub fn greedy(line: &str, reverse: bool) -> usize {
     let chars = line.chars().enumerate();
     let mut left = chars.clone();
     let mut largest = left.next().unwrap();
@@ -28,13 +28,23 @@ pub fn greedy(line: &str) -> usize {
         }
     }
 
-    let mut chars = chars.skip(largest.0 + 1);
+    let mut chars = chars
+        .skip(largest.0 + 1)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev();
 
     let mut largest_right = chars.next().unwrap();
     for (i, c) in chars {
         if c > largest_right.1 {
             largest_right = (i, c);
         }
+    }
+
+    if reverse {
+        return (largest_right.1.to_string() + &largest.1.to_string())
+            .parse::<usize>()
+            .unwrap();
     }
 
     (largest.1.to_string() + &largest_right.1.to_string())
@@ -46,10 +56,8 @@ pub fn solution(input: Vec<String>) -> Result<Answer, String> {
     let mut part_1 = 0;
 
     for line in &input {
-        let left = greedy(line);
-        let right = greedy(line.chars().rev().collect::<String>().as_str());
-
-        println!("{line} {left} vs {right}");
+        let left = greedy(line, false);
+        let right = greedy(line.chars().rev().collect::<String>().as_str(), true);
 
         part_1 += left.max(right);
     }
@@ -71,6 +79,16 @@ impl fmt::Display for Answer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn test_sample_line() {
+        let sample = ["8976543211111"];
+
+        let sample = sample.iter().map(|s| s.to_string()).collect();
+
+        let result = solution(sample).unwrap();
+        assert_eq!(result.part_1, 89);
+        assert_eq!(result.part_2, 0);
+    }
 
     #[test]
     fn test_sample() {
