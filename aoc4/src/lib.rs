@@ -1,17 +1,36 @@
 use std::fmt;
 
-pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
-    let file =
-        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
+pub fn solution(mut input: Vec<String>) -> Result<Answer, String> {
+    let mut part_1 = 0;
+    let mut part_2 = 0;
+    let mut passes = 0;
 
-    Some(
-        String::from_utf8(file)
-            .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
-            .to_string()
-            .lines()
-            .map(|s| s.to_string())
-            .collect(),
-    )
+    loop {
+        passes += 1;
+
+        let removed = pass(&input);
+        if passes == 1 {
+            part_1 += removed.len();
+        }
+
+        if removed.is_empty() {
+            break;
+        }
+
+        part_2 += removed.len();
+
+        for (x, y) in removed {
+            if let Some(row) = input.get_mut(y) {
+                row.replace_range(x..x + 1, "x");
+            }
+        }
+    }
+
+    Ok(Answer {
+        part_1,
+        part_2,
+        passes,
+    })
 }
 
 pub fn pass(input: &[String]) -> Vec<(usize, usize)> {
@@ -63,37 +82,18 @@ pub fn pass(input: &[String]) -> Vec<(usize, usize)> {
     output
 }
 
-pub fn solution(mut input: Vec<String>) -> Result<Answer, String> {
-    let mut part_1 = 0;
-    let mut part_2 = 0;
-    let mut passes = 0;
+pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
+    let file =
+        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
 
-    loop {
-        passes += 1;
-
-        let removed = pass(&input);
-        if passes == 1 {
-            part_1 += removed.len();
-        }
-
-        if removed.is_empty() {
-            break;
-        }
-
-        part_2 += removed.len();
-
-        for (x, y) in removed {
-            if let Some(row) = input.get_mut(y) {
-                row.replace_range(x..x + 1, "x");
-            }
-        }
-    }
-
-    Ok(Answer {
-        part_1,
-        part_2,
-        passes,
-    })
+    Some(
+        String::from_utf8(file)
+            .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
+            .to_string()
+            .lines()
+            .map(|s| s.to_string())
+            .collect(),
+    )
 }
 
 pub struct Answer {

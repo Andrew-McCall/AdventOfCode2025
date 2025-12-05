@@ -1,5 +1,12 @@
 use std::fmt;
 
+pub fn solution(_: Vec<String>) -> Result<Answer, String> {
+    Ok(Answer {
+        part_1: 0,
+        part_2: 0,
+    })
+}
+
 pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
     let file =
         std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
@@ -14,14 +21,13 @@ pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
     )
 }
 
-pub fn solution(_: Vec<String>) -> Result<Answer, String> {
-    Ok(Answer {})
+pub struct Answer {
+    part_1: usize,
+    part_2: usize,
 }
-
-pub struct Answer {}
 
 impl fmt::Display for Answer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "")
+        write!(f, "Part 1: {}, Part 2: {}", self.part_1, self.part_2)
     }
 }

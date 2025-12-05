@@ -1,17 +1,5 @@
 use std::fmt;
 
-pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
-    let file =
-        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
-    Some(
-        String::from_utf8(file)
-            .unwrap_or_else(|_| panic!("Failed to parse file: {}", input_path))
-            .split(',')
-            .map(str::to_string)
-            .collect::<Vec<String>>(),
-    )
-}
-
 pub fn solution(inputs: Vec<String>) -> Result<Answer, String> {
     assert!(inputs.len() > 1);
 
@@ -72,6 +60,18 @@ fn has_any_repeat(s: &str) -> bool {
         }
     }
     false
+}
+
+pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
+    let file =
+        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
+    Some(
+        String::from_utf8(file)
+            .unwrap_or_else(|_| panic!("Failed to parse file: {}", input_path))
+            .split(',')
+            .map(str::to_string)
+            .collect::<Vec<String>>(),
+    )
 }
 
 pub struct Answer {

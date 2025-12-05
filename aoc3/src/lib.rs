@@ -1,17 +1,15 @@
 use std::fmt;
 
-pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
-    let file =
-        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
+pub fn solution(input: Vec<String>) -> Result<Answer, String> {
+    let mut part_1 = 0;
+    let mut part_2 = 0;
 
-    Some(
-        String::from_utf8(file)
-            .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
-            .to_string()
-            .lines()
-            .map(|s| s.to_string())
-            .collect(),
-    )
+    for line in &input {
+        part_1 += joltage(line, 2);
+        part_2 += joltage(line, 12);
+    }
+
+    Ok(Answer { part_1, part_2 })
 }
 
 pub fn joltage(input: &str, size: usize) -> usize {
@@ -40,16 +38,18 @@ pub fn largest(input: &str) -> (usize, char) {
     largest
 }
 
-pub fn solution(input: Vec<String>) -> Result<Answer, String> {
-    let mut part_1 = 0;
-    let mut part_2 = 0;
+pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
+    let file =
+        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
 
-    for line in &input {
-        part_1 += joltage(line, 2);
-        part_2 += joltage(line, 12);
-    }
-
-    Ok(Answer { part_1, part_2 })
+    Some(
+        String::from_utf8(file)
+            .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
+            .to_string()
+            .lines()
+            .map(|s| s.to_string())
+            .collect(),
+    )
 }
 
 pub struct Answer {
