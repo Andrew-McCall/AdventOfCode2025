@@ -8,10 +8,12 @@ aoc1 = { path = "../aoc1", optional = true }
 aoc2 = { path = "../aoc2", optional = true }
 aoc3 = { path = "../aoc3", optional = true }
 aoc4 = { path = "../aoc4", optional = true }
+aoc5 = { path = "../aoc5", optional = true }
 
 [features]
-default = ["day4", "day1", "day2", "day3"]
+default = ["day1", "day2", "day3", "day4", "day5"]
 day1 = ["aoc1"]
 day2 = ["aoc2"]
 day3 = ["aoc3"]
 day4 = ["aoc4"]
+day5 = ["aoc5"]
