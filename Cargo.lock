@@ -11,6 +11,7 @@ dependencies = [
  "aoc3",
  "aoc4",
  "aoc5",
+ "aoc6",
 ]
 
 [[package]]
@@ -35,4 +36,8 @@ version = "0.1.0"
 
 [[package]]
 name = "aoc5"
+version = "0.1.0"
+
+[[package]]
+name = "aoc6"
 version = "0.1.0"
