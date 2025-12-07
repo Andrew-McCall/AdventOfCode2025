@@ -10,12 +10,14 @@ aoc3 = { path = "../aoc3", optional = true }
 aoc4 = { path = "../aoc4", optional = true }
 aoc5 = { path = "../aoc5", optional = true }
 aoc6 = { path = "../aoc6", optional = true }
+aoc7 = { path = "../aoc7", optional = true }
 
 [features]
-default = ["day1", "day2", "day3", "day4", "day5", "day6"]
+default = ["day1", "day2", "day3", "day4", "day5", "day6", "day7"]
 day1 = ["aoc1"]
 day2 = ["aoc2"]
 day3 = ["aoc3"]
 day4 = ["aoc4"]
 day5 = ["aoc5"]
 day6 = ["aoc6"]
+day7 = ["aoc7"]

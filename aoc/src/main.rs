@@ -39,6 +39,12 @@ fn main() {
         execute(|| aoc6::solution(aoc6::parse_input("aoc6/src/input.txt")).unwrap());
     }
 
+    #[cfg(feature = "day7")]
+    {
+        println!("Day Seven");
+        execute(|| aoc7::solution(aoc7::parse_input("aoc7/src/input.txt").unwrap()).unwrap());
+    }
+
     if unsafe { RAN } {
         println!("No day(s) selected.");
     }
