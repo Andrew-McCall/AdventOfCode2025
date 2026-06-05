@@ -1,4 +1,4 @@
-use std::{fmt, usize};
+use std::fmt;
 
 pub fn solution(input: Vec<Vec<String>>) -> Result<Answer, String> {
     let mut part_1 = 0;
