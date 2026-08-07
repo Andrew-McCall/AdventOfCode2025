@@ -1,55 +1,103 @@
-use std::fmt;
+use std::str::FromStr;
 
-pub fn solution(input: Vec<Vec<String>>) -> Result<Answer, String> {
-    let mut part_1 = 0;
-    let part_2 = 0;
+use aoc_core::{Answer, Error, Solution};
 
-    for question in &input {
-        let mut question = question.clone();
-        let operator = question.pop().unwrap();
-        let question: Vec<usize> = question.iter().map(|s| s.parse().unwrap()).collect();
-        match operator.as_str() {
-            "+" => part_1 += question.iter().sum::<usize>(),
-            "*" => part_1 += question.iter().product::<usize>(),
-            _ => {
-                panic!("Unkown Operation: {}", operator)
+pub struct Day6 {
+    questions: Vec<Question>,
+}
+
+struct Question {
+    values: Vec<usize>,
+    operator: Operator,
+}
+
+enum Operator {
+    Add,
+    Multiply,
+}
+
+/// The sums read down the columns, with the operator on the bottom row.
+impl FromStr for Day6 {
+    type Err = Error;
+
+    fn from_str(input: &str) -> Result<Self, Error> {
+        let mut columns: Vec<Vec<&str>> = Vec::new();
+
+        for line in input.lines().filter(|line| !line.trim().is_empty()) {
+            for (index, word) in line.split_ascii_whitespace().enumerate() {
+                match columns.get_mut(index) {
+                    Some(column) => column.push(word),
+                    None => columns.push(vec![word]),
+                }
             }
         }
-    }
 
-    Ok(Answer { part_1, part_2 })
+        let questions = columns
+            .into_iter()
+            .map(Question::from_column)
+            .collect::<Result<_, _>>()?;
+
+        Ok(Day6 { questions })
+    }
 }
 
-pub fn parse_input(input_path: &str) -> Vec<Vec<String>> {
-    let file =
-        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
+impl Question {
+    fn from_column(mut column: Vec<&str>) -> Result<Self, Error> {
+        let operator = column
+            .pop()
+            .ok_or_else(|| Error::parse("column with no operator"))?;
 
-    let mut questions: Vec<Vec<String>> = Vec::new();
+        let operator = match operator {
+            "+" => Operator::Add,
+            "*" => Operator::Multiply,
+            other => return Err(Error::parse(format!("unknown operator: {other}"))),
+        };
 
-    for line in String::from_utf8(file)
-        .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
-        .lines()
-    {
-        for (index, word) in line.split_ascii_whitespace().enumerate() {
-            let word = word.to_string();
-            if let Some(question) = questions.get_mut(index) {
-                question.push(word);
-            } else {
-                questions.push(vec![word]);
-            }
+        let values = column
+            .into_iter()
+            .map(|value| {
+                value
+                    .parse()
+                    .map_err(|_| Error::parse(format!("not a number: {value}")))
+            })
+            .collect::<Result<_, _>>()?;
+
+        Ok(Question { values, operator })
+    }
+
+    fn answer(&self) -> usize {
+        match self.operator {
+            Operator::Add => self.values.iter().sum(),
+            Operator::Multiply => self.values.iter().product(),
         }
     }
-
-    questions
 }
 
-pub struct Answer {
-    part_1: usize,
-    part_2: usize,
+impl Solution for Day6 {
+    const DAY: u8 = 6;
+
+    fn solve(self) -> Result<Answer, Error> {
+        let part_1: usize = self.questions.iter().map(Question::answer).sum();
+
+        Ok(Answer::new(part_1, "unsolved"))
+    }
 }
 
-impl fmt::Display for Answer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Part 1: {}, Part 2: {}", self.part_1, self.part_2)
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use aoc_core::sample;
+
+    #[test]
+    fn puzzle_sample() {
+        let input = sample(&["1 2", "3 4", "+ *"]);
+        let result = input.parse::<Day6>().unwrap().solve().unwrap();
+
+        assert_eq!(result.part_1, "12");
+    }
+
+    #[test]
+    fn rejects_unknown_operators() {
+        assert!(sample(&["1", "-"]).parse::<Day6>().is_err());
     }
 }

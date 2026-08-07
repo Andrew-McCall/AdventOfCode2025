@@ -1,86 +1,126 @@
-use std::fmt;
+use std::str::FromStr;
 
-pub fn solution(inputs: Vec<String>) -> Result<Answer, String> {
-    assert!(inputs.len() > 1);
+use aoc_core::{Answer, Error, Solution};
 
-    let mut part_1 = 0;
-    let mut part_2 = 0;
-    for range in &inputs {
-        let mut range_split = range.split("-");
-        let range_start_str = range_split
-            .next()
-            .unwrap_or_else(|| panic!("Invalid Range: {range}"));
-        let range_start: usize = range_start_str
-            .parse()
-            .unwrap_or_else(|_| panic!("Invalid Range: {range}"));
-        let range_end_str = range_split
-            .next()
-            .unwrap_or_else(|| panic!("Invalid Range: {range}"));
-        let range_end: usize = range_end_str
-            .parse()
-            .unwrap_or_else(|_| panic!("Invalid Range: {range}"));
+pub struct Day2 {
+    ranges: Vec<(usize, usize)>,
+}
 
-        for i in range_start..=range_end {
-            let i_str = &i.to_string();
-            if has_repeat(i_str) {
-                part_1 += i;
-            }
-            if has_any_repeat(i_str) {
-                part_2 += i;
+impl FromStr for Day2 {
+    type Err = Error;
+
+    fn from_str(input: &str) -> Result<Self, Error> {
+        let ranges = input
+            .split(',')
+            .map(str::trim)
+            .filter(|range| !range.is_empty())
+            .map(parse_range)
+            .collect::<Result<_, _>>()?;
+
+        Ok(Day2 { ranges })
+    }
+}
+
+fn parse_range(range: &str) -> Result<(usize, usize), Error> {
+    let (start, end) = range
+        .split_once('-')
+        .ok_or_else(|| Error::parse(format!("not a range: {range}")))?;
+
+    let start = start
+        .parse()
+        .map_err(|_| Error::parse(format!("not a number: {start}")))?;
+    let end = end
+        .parse()
+        .map_err(|_| Error::parse(format!("not a number: {end}")))?;
+
+    if start > end {
+        return Err(Error::parse(format!("backwards range: {range}")));
+    }
+
+    Ok((start, end))
+}
+
+impl Solution for Day2 {
+    const DAY: u8 = 2;
+
+    fn solve(self) -> Result<Answer, Error> {
+        let mut part_1 = 0;
+        let mut part_2 = 0;
+
+        for (start, end) in self.ranges {
+            for number in start..=end {
+                let digits = number.to_string();
+                let digits = digits.as_bytes();
+
+                if is_doubled(digits) {
+                    part_1 += number;
+                }
+                if is_repeated(digits) {
+                    part_2 += number;
+                }
             }
         }
+
+        Ok(Answer::new(part_1, part_2))
     }
-    Ok(Answer { part_1, part_2 })
 }
 
-fn has_repeat(s: &str) -> bool {
-    let (start, end) = s.split_at(s.len() / 2);
-    if start == end {
-        return true;
-    }
-    false
+/// The digits are one half written twice, e.g. `123123`.
+fn is_doubled(digits: &[u8]) -> bool {
+    let half = digits.len() / 2;
+    digits.len().is_multiple_of(2) && digits[..half] == digits[half..]
 }
 
-fn has_any_repeat(s: &str) -> bool {
-    let len = s.len();
-    if len < 2 {
+/// The digits are some shorter run repeated to fill them, e.g. `121212`.
+fn is_repeated(digits: &[u8]) -> bool {
+    let length = digits.len();
+    if length < 2 {
         return false;
     }
-    for i in 1..=len / 2 {
-        if !len.is_multiple_of(i) {
-            continue;
-        }
-        let pattern = &s[..i];
-        if s.chars()
-            .collect::<Vec<_>>()
-            .chunks(i)
-            .all(|chunk| chunk.iter().collect::<String>() == pattern)
-        {
-            return true;
-        }
+
+    (1..=length / 2)
+        .filter(|size| length.is_multiple_of(*size))
+        .any(|size| digits.chunks(size).all(|chunk| chunk == &digits[..size]))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn solve(input: &str) -> Answer {
+        input.parse::<Day2>().unwrap().solve().unwrap()
     }
-    false
-}
 
-pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
-    let file =
-        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
-    Some(
-        String::from_utf8(file)
-            .unwrap_or_else(|_| panic!("Failed to parse file: {}", input_path))
-            .split(',')
-            .map(str::to_string)
-            .collect::<Vec<String>>(),
-    )
-}
+    #[test]
+    fn spots_doubles() {
+        assert!(is_doubled(b"123123"));
+        assert!(is_doubled(b"11"));
+        assert!(!is_doubled(b"1231234"));
+        assert!(!is_doubled(b"123124"));
+        assert!(!is_doubled(b"7"));
+    }
 
-pub struct Answer {
-    part_1: usize,
-    part_2: usize,
-}
+    #[test]
+    fn spots_repeats() {
+        assert!(is_repeated(b"121212"));
+        assert!(is_repeated(b"1111"));
+        assert!(is_repeated(b"123123"));
+        assert!(!is_repeated(b"123124"));
+        assert!(!is_repeated(b"7"));
+    }
 
-impl fmt::Display for Answer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} : {}", self.part_1, self.part_2)
+    #[test]
+    fn sums_a_range() {
+        // 11 and 22 are doubles; 111 is a repeat but not a double.
+        let result = solve("10-30,111-111");
+        assert_eq!(result.part_1, "33");
+        assert_eq!(result.part_2, "144");
+    }
+
+    #[test]
+    fn rejects_junk() {
+        assert!("10-".parse::<Day2>().is_err());
+        assert!("10".parse::<Day2>().is_err());
+        assert!("30-10".parse::<Day2>().is_err());
     }
 }

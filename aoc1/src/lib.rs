@@ -1,178 +1,150 @@
-use std::fmt;
+use std::str::FromStr;
 
-pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
-    let file =
-        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
+use aoc_core::{Answer, Error, Solution};
 
-    Some(
-        String::from_utf8(file)
-            .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
+const DIAL: isize = 100;
+const START: isize = 50;
+
+pub struct Day1 {
+    turns: Vec<Turn>,
+}
+
+enum Turn {
+    Left(isize),
+    Right(isize),
+}
+
+impl FromStr for Day1 {
+    type Err = Error;
+
+    fn from_str(input: &str) -> Result<Self, Error> {
+        let turns = input
             .lines()
-            .map(str::to_string)
-            .collect(),
-    )
+            .filter(|line| !line.trim().is_empty())
+            .map(Turn::from_str)
+            .collect::<Result<_, _>>()?;
+
+        Ok(Day1 { turns })
+    }
 }
 
-pub fn solution(inputs: Vec<String>) -> Result<Answer, String> {
-    let mut counter = 50_isize;
-    let mut zero_land = 0;
-    let mut zero_pass = 0;
+impl FromStr for Turn {
+    type Err = Error;
 
-    for line in &inputs {
-        let (start, value): (char, isize) = parse_line(line)?;
+    fn from_str(line: &str) -> Result<Self, Error> {
+        let line = line.trim();
+        let (direction, amount) = line
+            .split_at_checked(1)
+            .ok_or_else(|| Error::parse(format!("empty turn: {line:?}")))?;
 
-        match start {
-            'R' => {
-                if counter > 0 && counter + value > 99 {
-                    zero_pass += 1
-                };
-                counter += value;
-            }
-            'L' => {
-                if counter > 0 && value > counter {
-                    zero_pass += 1
-                }
-                counter -= value;
-            }
-            _ => return Err(format!("Invalid Line: {line}")),
-        }
+        let amount = amount
+            .parse()
+            .map_err(|_| Error::parse(format!("not a number: {line}")))?;
 
-        zero_pass += value.abs() / 100;
-
-        counter = counter.rem_euclid(100);
-
-        if counter == 0 {
-            zero_land += 1;
+        match direction {
+            "L" => Ok(Turn::Left(amount)),
+            "R" => Ok(Turn::Right(amount)),
+            _ => Err(Error::parse(format!("unknown direction: {line}"))),
         }
     }
-
-    Ok(Answer {
-        final_number: counter,
-        zero_land,
-        zero_pass,
-    })
 }
 
-fn parse_line(line: &str) -> Result<(char, isize), String> {
-    let mut chars = line.chars();
+impl Solution for Day1 {
+    const DAY: u8 = 1;
 
-    let start = chars
-        .next()
-        .ok_or_else(|| format!("Invalid Line (empty): {line}"))?;
+    fn solve(self) -> Result<Answer, Error> {
+        let mut position = START;
+        let mut landings = 0;
+        let mut touches = 0;
 
-    let rest = chars.as_str();
+        for turn in &self.turns {
+            let next = match turn {
+                Turn::Left(amount) => position - amount,
+                Turn::Right(amount) => position + amount,
+            };
 
-    let value = rest
-        .parse::<isize>()
-        .map_err(|_| format!("Invalid Number: {line}"))?;
+            touches += zeros_crossed(position, next);
+            position = next.rem_euclid(DIAL);
 
-    Ok((start, value))
-}
+            if position == 0 {
+                landings += 1;
+            }
+        }
 
-pub struct Answer {
-    final_number: isize,
-    zero_land: isize,
-    zero_pass: isize,
-}
-
-impl fmt::Display for Answer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Part 1:{}, Part 2:{}, Final Counter: {}",
-            self.zero_land, self.zero_pass, self.final_number
-        )
+        Ok(Answer::new(landings, touches).with_note(format!("dial on {position}")))
     }
+}
+
+/// How many times the dial reads zero moving from `from` to `to`, counting the
+/// end of the move but not the start. Zero is every multiple of `DIAL`, so this
+/// is just the number of multiples in the half-open interval between the two.
+fn zeros_crossed(from: isize, to: isize) -> usize {
+    let count = if to >= from {
+        to.div_euclid(DIAL) - from.div_euclid(DIAL)
+    } else {
+        divide_up(from) - divide_up(to)
+    };
+
+    count as usize
+}
+
+fn divide_up(value: isize) -> isize {
+    (value + DIAL - 1).div_euclid(DIAL)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use aoc_core::sample;
 
-    #[test]
-    fn test_parse_line() {
-        assert_eq!(parse_line("R100").unwrap(), ('R', 100));
-        assert_eq!(parse_line("L100").unwrap(), ('L', 100));
+    fn solve(lines: &[&str]) -> Answer {
+        sample(lines).parse::<Day1>().unwrap().solve().unwrap()
     }
 
     #[test]
-    fn test_div_euclid() {
-        let mut counter: i32;
-        counter = 100;
-        counter = counter.div_euclid(100);
-        assert_eq!(counter, 1);
-
-        counter = -250;
-        counter = counter.div_euclid(100);
-        assert_eq!(counter, -3);
-
-        counter = -25;
-        counter = counter.div_euclid(100);
-        assert_eq!(counter, -1);
+    fn parses_a_turn() {
+        assert!(matches!("R100".parse::<Turn>(), Ok(Turn::Right(100))));
+        assert!(matches!("L100".parse::<Turn>(), Ok(Turn::Left(100))));
+        assert!("D100".parse::<Turn>().is_err());
+        assert!("R1x0".parse::<Turn>().is_err());
     }
 
     #[test]
-    fn test_simple() {
-        let sample: [&str; 3] = ["L50", "R50", "L50"];
-
-        let sample = sample.iter().map(|s| s.to_string()).collect();
-
-        let result = solution(sample).unwrap();
-        assert_eq!(result.zero_land, 2);
-        assert_eq!(result.zero_pass, 0);
+    fn counts_zeros_in_one_move() {
+        // Down from 50 to -18 passes zero once.
+        assert_eq!(zeros_crossed(50, -18), 1);
+        // Landing on zero counts.
+        assert_eq!(zeros_crossed(52, 100), 1);
+        // Leaving zero does not count it again.
+        assert_eq!(zeros_crossed(0, -5), 0);
+        // A long move wraps several times.
+        assert_eq!(zeros_crossed(0, -400), 4);
     }
 
     #[test]
-    fn test_large() {
-        let sample = [
+    fn simple() {
+        let result = solve(&["L50", "R50", "L50"]);
+        assert_eq!(result.part_1, "2");
+        // Both landings on zero are also touches.
+        assert_eq!(result.part_2, "2");
+    }
+
+    #[test]
+    fn large() {
+        let result = solve(&[
             "L50", "L400", "R400", "R99", "R14", "L82", "L82", "L82", "L82", "L82", "L113",
-        ];
-
-        let sample = sample.iter().map(|s| s.to_string()).collect();
-
-        let result = solution(sample).unwrap();
-        // assert_eq!(result.final_number, 32);
-        assert_eq!(result.zero_land, 3);
-        assert_eq!(result.zero_pass, 16);
+        ]);
+        assert_eq!(result.part_1, "3");
+        assert_eq!(result.part_2, "16");
     }
 
     #[test]
-    fn test_sample() {
-        let sample = [
+    fn puzzle_sample() {
+        let result = solve(&[
             "L68", "L30", "R48", "L5", "R60", "L55", "L1", "L99", "R14", "L82",
-        ];
-
-        let sample = sample.iter().map(|s| s.to_string()).collect();
-
-        let result = solution(sample).unwrap();
-        assert_eq!(result.final_number, 32);
-        assert_eq!(result.zero_land, 3);
-        assert_eq!(result.zero_pass, 6);
-    }
-
-    #[test]
-    fn test_rem_euclid() {
-        let mut counter: i32;
-        counter = 100;
-        counter = counter.rem_euclid(100);
-        assert_eq!(counter, 0);
-
-        counter = 99;
-        counter = counter.rem_euclid(100);
-        assert_eq!(counter, 99);
-
-        counter = 102;
-        counter = counter.rem_euclid(100);
-        assert_eq!(counter, 2);
-
-        counter = -100;
-        counter = counter.rem_euclid(100);
-        assert_eq!(counter, 0);
-
-        counter = -51;
-        counter = counter.rem_euclid(100);
-        assert_eq!(counter, 49);
-
-        assert_eq!(-400_i32.rem_euclid(100), 400_i32.rem_euclid(100));
+        ]);
+        assert_eq!(result.part_1, "3");
+        assert_eq!(result.part_2, "6");
+        assert_eq!(result.note.as_deref(), Some("dial on 32"));
     }
 }

@@ -1,95 +1,122 @@
-use std::fmt;
+use std::str::FromStr;
 
-pub fn solution(input: Vec<String>) -> Result<Answer, String> {
-    let mut part_1 = 0;
-    let mut part_2 = 0;
+use aoc_core::{Answer, Error, Solution};
 
-    for line in &input {
-        part_1 += joltage(line, 2);
-        part_2 += joltage(line, 12);
-    }
-
-    Ok(Answer { part_1, part_2 })
+pub struct Day3 {
+    banks: Vec<Vec<u8>>,
 }
 
-pub fn joltage(input: &str, size: usize) -> usize {
-    let mut output = String::new();
+impl FromStr for Day3 {
+    type Err = Error;
+
+    fn from_str(input: &str) -> Result<Self, Error> {
+        let mut banks = Vec::new();
+
+        for line in input.lines().filter(|line| !line.trim().is_empty()) {
+            let line = line.trim();
+            if !line.bytes().all(|byte| byte.is_ascii_digit()) {
+                return Err(Error::parse(format!("not all digits: {line}")));
+            }
+            banks.push(line.as_bytes().to_vec());
+        }
+
+        Ok(Day3 { banks })
+    }
+}
+
+impl Solution for Day3 {
+    const DAY: u8 = 3;
+
+    fn solve(self) -> Result<Answer, Error> {
+        let mut part_1: u64 = 0;
+        let mut part_2: u64 = 0;
+
+        for bank in &self.banks {
+            part_1 += joltage(bank, 2)?;
+            part_2 += joltage(bank, 12)?;
+        }
+
+        Ok(Answer::new(part_1, part_2))
+    }
+}
+
+/// The largest number of `size` digits that can be read off `digits` in order.
+/// Take the biggest digit that still leaves enough behind, then repeat.
+fn joltage(digits: &[u8], size: usize) -> Result<u64, Error> {
+    if digits.len() < size {
+        return Err(Error::solve(format!(
+            "need {size} digits, bank only has {}",
+            digits.len()
+        )));
+    }
+
+    let mut value = 0;
     let mut start = 0;
-    while output.len() < size {
-        let next = largest(
-            input
-                .get(start..input.len() - size + output.len() + 1)
-                .unwrap(),
-        );
-        output.push(next.1);
-        start += next.0 + 1;
+
+    for taken in 0..size {
+        let window = &digits[start..digits.len() - size + taken + 1];
+        let (offset, digit) = first_largest(window);
+
+        value = value * 10 + u64::from(digit - b'0');
+        start += offset + 1;
     }
-    output.parse().unwrap()
+
+    Ok(value)
 }
 
-pub fn largest(input: &str) -> (usize, char) {
-    let mut chars = input.chars().enumerate();
-    let mut largest = chars.next().unwrap();
-    for c in chars {
-        if c.1 > largest.1 {
-            largest = c;
+/// Position and value of the largest byte, preferring the earliest on a tie.
+fn first_largest(digits: &[u8]) -> (usize, u8) {
+    let mut largest = (0, digits[0]);
+
+    for (index, &digit) in digits.iter().enumerate() {
+        if digit > largest.1 {
+            largest = (index, digit);
         }
     }
+
     largest
-}
-
-pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
-    let file =
-        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
-
-    Some(
-        String::from_utf8(file)
-            .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
-            .to_string()
-            .lines()
-            .map(|s| s.to_string())
-            .collect(),
-    )
-}
-
-pub struct Answer {
-    part_1: usize,
-    part_2: usize,
-}
-
-impl fmt::Display for Answer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Part 1: {}, Part 2: {}", self.part_1, self.part_2)
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn test_sample_line() {
-        let sample = ["897654321111111119"];
+    use aoc_core::sample;
 
-        let sample = sample.iter().map(|s| s.to_string()).collect();
-
-        let result = solution(sample).unwrap();
-        assert_eq!(result.part_1, 99);
-        assert_eq!(result.part_2, 976543211119);
+    fn solve(lines: &[&str]) -> Answer {
+        sample(lines).parse::<Day3>().unwrap().solve().unwrap()
     }
 
     #[test]
-    fn test_sample() {
-        let sample = [
+    fn takes_the_earliest_largest() {
+        assert_eq!(first_largest(b"1919"), (1, b'9'));
+    }
+
+    #[test]
+    fn one_bank() {
+        let result = solve(&["897654321111111119"]);
+        assert_eq!(result.part_1, "99");
+        assert_eq!(result.part_2, "976543211119");
+    }
+
+    #[test]
+    fn puzzle_sample() {
+        let result = solve(&[
             "987654321111111",
             "811111111111119",
             "234234234234278",
             "818181911112111",
-        ];
+        ]);
+        assert_eq!(result.part_1, "357");
+        assert_eq!(result.part_2, "3121910778619");
+    }
 
-        let sample = sample.iter().map(|s| s.to_string()).collect();
+    #[test]
+    fn rejects_junk() {
+        assert!("12x4".parse::<Day3>().is_err());
+    }
 
-        let result = solution(sample).unwrap();
-        assert_eq!(result.part_1, 357);
-        assert_eq!(result.part_2, 3121910778619);
+    #[test]
+    fn reports_short_banks() {
+        assert!("123".parse::<Day3>().unwrap().solve().is_err());
     }
 }

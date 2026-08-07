@@ -1,124 +1,124 @@
-use std::fmt;
+use std::str::FromStr;
 
-pub fn solution(mut input: Vec<String>) -> Result<Answer, String> {
-    let mut part_1 = 0;
-    let mut part_2 = 0;
-    let mut passes = 0;
+use aoc_core::{Answer, Error, Solution};
 
-    loop {
-        passes += 1;
+const ROCK: u8 = b'@';
+const GONE: u8 = b'x';
 
-        let removed = pass(&input);
-        if passes == 1 {
-            part_1 += removed.len();
-        }
-
-        if removed.is_empty() {
-            break;
-        }
-
-        part_2 += removed.len();
-
-        for (x, y) in removed {
-            if let Some(row) = input.get_mut(y) {
-                row.replace_range(x..x + 1, "x");
-            }
-        }
-    }
-
-    Ok(Answer {
-        part_1,
-        part_2,
-        passes,
-    })
+pub struct Day4 {
+    grid: Vec<Vec<u8>>,
 }
 
-pub fn pass(input: &[String]) -> Vec<(usize, usize)> {
-    let mut output = Vec::new();
-    let w = input.first().unwrap().len() as i32;
-    let h = input.len() as i32;
+impl FromStr for Day4 {
+    type Err = Error;
 
-    for y in 0..h {
-        for x in 0..w {
-            let my = y as usize;
-            let mx = x as usize;
-
-            if let Some(row) = input.get(my)
-                && let Some(space) = row.get(mx..mx + 1)
-                && space == "@"
-            {
-                let mut adjacent = 0;
-                for i in -1..=1 {
-                    for j in -1..=1 {
-                        if j == 0 && i == 0 {
-                            continue;
-                        }
-
-                        let y: i32 = y + j;
-                        let x: i32 = x + i;
-
-                        if x < 0 || y < 0 || y > h || x > w {
-                            continue;
-                        }
-
-                        let x = x as usize;
-                        let y = y as usize;
-
-                        if let Some(row) = input.get(y)
-                            && let Some(space) = row.get(x..x + 1)
-                            && space == "@"
-                        {
-                            adjacent += 1;
-                        }
-                    }
-                }
-
-                if adjacent < 4 {
-                    output.push((mx, my));
-                }
-            }
-        }
-    }
-    output
-}
-
-pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
-    let file =
-        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
-
-    Some(
-        String::from_utf8(file)
-            .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
-            .to_string()
+    fn from_str(input: &str) -> Result<Self, Error> {
+        let grid: Vec<Vec<u8>> = input
             .lines()
-            .map(|s| s.to_string())
-            .collect(),
-    )
-}
+            .filter(|line| !line.trim().is_empty())
+            .map(|line| line.trim().as_bytes().to_vec())
+            .collect();
 
-pub struct Answer {
-    part_1: usize,
-    part_2: usize,
-    passes: usize,
-}
+        if grid.is_empty() {
+            return Err(Error::parse("empty grid"));
+        }
 
-impl fmt::Display for Answer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Part 1: {} Part 2: {} ({})",
-            self.part_1, self.part_2, self.passes
-        )
+        let width = grid[0].len();
+        if grid.iter().any(|row| row.len() != width) {
+            return Err(Error::parse("grid is not rectangular"));
+        }
+
+        Ok(Day4 { grid })
     }
+}
+
+impl Solution for Day4 {
+    const DAY: u8 = 4;
+
+    fn solve(mut self) -> Result<Answer, Error> {
+        let mut part_1 = 0;
+        let mut part_2 = 0;
+        let mut passes = 0;
+
+        loop {
+            passes += 1;
+            let falling = unsupported(&self.grid);
+
+            if passes == 1 {
+                part_1 = falling.len();
+            }
+            if falling.is_empty() {
+                break;
+            }
+            part_2 += falling.len();
+
+            for (x, y) in falling {
+                self.grid[y][x] = GONE;
+            }
+        }
+
+        Ok(Answer::new(part_1, part_2).with_note(format!("{passes} passes")))
+    }
+}
+
+/// Every rock with fewer than four rocks touching it.
+fn unsupported(grid: &[Vec<u8>]) -> Vec<(usize, usize)> {
+    let mut falling = Vec::new();
+
+    for (y, row) in grid.iter().enumerate() {
+        for (x, &cell) in row.iter().enumerate() {
+            if cell == ROCK && neighbours(grid, x, y) < 4 {
+                falling.push((x, y));
+            }
+        }
+    }
+
+    falling
+}
+
+fn neighbours(grid: &[Vec<u8>], x: usize, y: usize) -> usize {
+    let mut count = 0;
+
+    for down in -1..=1_isize {
+        for across in -1..=1_isize {
+            if down == 0 && across == 0 {
+                continue;
+            }
+
+            let Some(y) = y.checked_add_signed(down) else {
+                continue;
+            };
+            let Some(x) = x.checked_add_signed(across) else {
+                continue;
+            };
+
+            if grid.get(y).and_then(|row| row.get(x)) == Some(&ROCK) {
+                count += 1;
+            }
+        }
+    }
+
+    count
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use aoc_core::sample;
+
+    fn solve(lines: &[&str]) -> Answer {
+        sample(lines).parse::<Day4>().unwrap().solve().unwrap()
+    }
 
     #[test]
-    fn test_sample() {
-        let sample = [
+    fn counts_neighbours_at_the_edge() {
+        let grid = sample(&["@@", "@@"]).parse::<Day4>().unwrap().grid;
+        assert_eq!(neighbours(&grid, 0, 0), 3);
+    }
+
+    #[test]
+    fn puzzle_sample() {
+        let result = solve(&[
             "..@@.@@@@.",
             "@@@.@.@.@@",
             "@@@@@.@.@@",
@@ -129,22 +129,20 @@ mod tests {
             "@.@@@.@@@@",
             ".@@@@@@@@.",
             "@.@.@@@.@.",
-        ]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
-
-        let result = solution(sample).unwrap();
-        assert_eq!(result.part_1, 13);
-        assert_eq!(result.part_2, 43);
-        assert_eq!(result.passes, 10);
+        ]);
+        assert_eq!(result.part_1, "13");
+        assert_eq!(result.part_2, "43");
+        assert_eq!(result.note.as_deref(), Some("10 passes"));
     }
 
     #[test]
-    fn test_line_sample() {
-        let sample = ["@@@.@.@.@@"].iter().map(|s| s.to_string()).collect();
+    fn one_row() {
+        let result = solve(&["@@@.@.@.@@"]);
+        assert_eq!(result.part_1, "7");
+    }
 
-        let result = solution(sample).unwrap();
-        assert_eq!(result.part_1, 7);
+    #[test]
+    fn rejects_ragged_grids() {
+        assert!(sample(&["@@", "@"]).parse::<Day4>().is_err());
     }
 }

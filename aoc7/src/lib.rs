@@ -1,33 +1,25 @@
-use std::fmt;
+use std::str::FromStr;
 
-pub fn solution(_: Vec<String>) -> Result<Answer, String> {
-    Ok(Answer {
-        part_1: 0,
-        part_2: 0,
-    })
+use aoc_core::{Answer, Error, Solution};
+
+pub struct Day7 {
+    _lines: Vec<String>,
 }
 
-pub fn parse_input(input_path: &str) -> Option<Vec<String>> {
-    let file =
-        std::fs::read(input_path).unwrap_or_else(|_| panic!("Failed to read file: {input_path}"));
+impl FromStr for Day7 {
+    type Err = Error;
 
-    Some(
-        String::from_utf8(file)
-            .unwrap_or_else(|_| panic!("Failed to parse file: {input_path}"))
-            .to_string()
-            .lines()
-            .map(|s| s.to_string())
-            .collect(),
-    )
+    fn from_str(input: &str) -> Result<Self, Error> {
+        Ok(Day7 {
+            _lines: input.lines().map(str::to_string).collect(),
+        })
+    }
 }
 
-pub struct Answer {
-    part_1: usize,
-    part_2: usize,
-}
+impl Solution for Day7 {
+    const DAY: u8 = 7;
 
-impl fmt::Display for Answer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Part 1: {}, Part 2: {}", self.part_1, self.part_2)
+    fn solve(self) -> Result<Answer, Error> {
+        Ok(Answer::new("unsolved", "unsolved"))
     }
 }

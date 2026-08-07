@@ -6,6 +6,7 @@ version = 4
 name = "aoc"
 version = "0.1.0"
 dependencies = [
+ "aoc-core",
  "aoc1",
  "aoc2",
  "aoc3",
@@ -16,33 +17,61 @@ dependencies = [
 ]
 
 [[package]]
-name = "aoc0"
+name = "aoc-core"
 version = "0.1.0"
 
 [[package]]
 name = "aoc1"
 version = "0.1.0"
+dependencies = [
+ "aoc-core",
+]
 
 [[package]]
 name = "aoc2"
 version = "0.1.0"
+dependencies = [
+ "aoc-core",
+]
 
 [[package]]
 name = "aoc3"
 version = "0.1.0"
+dependencies = [
+ "aoc-core",
+]
 
 [[package]]
 name = "aoc4"
 version = "0.1.0"
+dependencies = [
+ "aoc-core",
+]
 
 [[package]]
 name = "aoc5"
 version = "0.1.0"
+dependencies = [
+ "aoc-core",
+]
 
 [[package]]
 name = "aoc6"
 version = "0.1.0"
+dependencies = [
+ "aoc-core",
+]
 
 [[package]]
 name = "aoc7"
 version = "0.1.0"
+dependencies = [
+ "aoc-core",
+]
+
+[[package]]
+name = "template"
+version = "0.1.0"
+dependencies = [
+ "aoc-core",
+]
