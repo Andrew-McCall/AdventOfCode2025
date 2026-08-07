@@ -69,5 +69,5 @@ Rename the package in `aoc8/Cargo.toml` and the struct in `aoc8/src/lib.rs`, set
 | 3   | done   | done   |
 | 4   | done   | done   |
 | 5   | done   | done   |
-| 6   | done   |        |
+| 6   | done   | done   |
 | 7   |        |        |
